@@ -238,15 +238,15 @@ def write_datasets(x_train, x_test, y_train, feature_names):
         np.savetxt(name, x, delimiter=",", header=header, fmt="%.3e")
     
     # Reduce Dataset size
-    x_train = x_train.astype(np.float16)
-    x_test = x_test.astype(np.float16)
+    # x_train = x_train.astype(np.float16)
+    # x_test = x_test.astype(np.float16)
 
-    create_npy_dataset(x_train, feature_names, "../data/train_dataset.npy")
-    create_npy_dataset(y_train, feature_names, "../data/train_targets.npy")
-    create_npy_dataset(x_test, feature_names, "../data/test_dataset.npy")
-    create_csv_dataset(x_train, feature_names, "../data/train_dataset.csv")
-    create_csv_dataset(y_train, feature_names, "../data/train_targets.csv")
-    create_csv_dataset(x_test, feature_names, "../data/test_dataset.csv")
+    create_npy_dataset(x_train, feature_names, "../original_data/train_dataset.npy")
+    create_npy_dataset(y_train, feature_names, "../original_data/train_targets.npy")
+    create_npy_dataset(x_test, feature_names, "../original_data/test_dataset.npy")
+    # create_csv_dataset(x_train, feature_names, "../original_data/train_dataset.csv")
+    # create_csv_dataset(y_train, feature_names, "../original_data/train_targets.csv")
+    # create_csv_dataset(x_test, feature_names, "../original_data/test_dataset.csv")
 
 def run():
     data_dir = "."
@@ -258,14 +258,14 @@ def run():
 
     print("Pipeline Stage 1 - Loading Datasets...")
     x_train, x_test, y_train, _, _ = hp.load_csv_data(data_dir)
-    x_train, x_test = merge_landline_cellphone_features(x_train, x_test, feat_indexes)
-    x_train, x_test, feature_names, feat_indexes = drop_useless_features(x_train, x_test, feature_names, feat_indexes)
-    x_train, x_test = replace_weird_values(x_train, x_test, feature_names, feat_indexes)
-    feat_types = detect_feature_types(x_train, feature_names, feat_indexes)
-    x_train, x_test = fill_nans(x_train, x_test, feat_indexes, feat_types)
-    # x_train, x_test, feature_names, feat_indexes = one_hot_categoricals(x_train, x_test, feature_names, feat_indexes, feat_types)
-    x_train, x_test = standardize(x_train, x_test)
-    x_train, x_test = add_bias_feature(x_train, x_test)
+    # x_train, x_test = merge_landline_cellphone_features(x_train, x_test, feat_indexes)
+    # x_train, x_test, feature_names, feat_indexes = drop_useless_features(x_train, x_test, feature_names, feat_indexes)
+    # x_train, x_test = replace_weird_values(x_train, x_test, feature_names, feat_indexes)
+    # feat_types = detect_feature_types(x_train, feature_names, feat_indexes)
+    # x_train, x_test = fill_nans(x_train, x_test, feat_indexes, feat_types)
+    # # x_train, x_test, feature_names, feat_indexes = one_hot_categoricals(x_train, x_test, feature_names, feat_indexes, feat_types)
+    # x_train, x_test = standardize(x_train, x_test)
+    # x_train, x_test = add_bias_feature(x_train, x_test)
     write_datasets(x_train, x_test, y_train, feature_names)
 
 run()

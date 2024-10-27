@@ -1,4 +1,7 @@
 from enum import Enum
+
+import numpy as np
+
 class FeatureType(Enum):
     BINARY = 1
     CATEGORICAL = 2
@@ -6,7 +9,8 @@ class FeatureType(Enum):
     NUMERICAL_DISCRETE = 4
     CATEGORICAL_ORDINAL = 5
 
-feature_types = {
+
+FEATURE_TYPES = {
     'IMONTH': FeatureType.NUMERICAL_DISCRETE,
     'IDAY': FeatureType.NUMERICAL_DISCRETE,
     'NUMMEN': FeatureType.NUMERICAL_DISCRETE,
@@ -177,3 +181,52 @@ feature_types = {
     '_LMTWRK1': FeatureType.CATEGORICAL_ORDINAL,   
     '_LMTSCL1': FeatureType.CATEGORICAL_ORDINAL,   
 }
+
+def detect_binary_features(train_dataset):
+    binary_features = []
+    for feature, feature_col in train_dataset.items():
+        unique_values = np.unique(feature_col)
+        num_unique_values = len(unique_values)
+
+        # We dont want to count Nan as a value
+        if np.isnan(unique_values).any():
+            num_unique_values -= 1
+
+        if num_unique_values == 2:
+            binary_features.append(feature)
+    
+    return binary_features
+
+def detect_numerical_continuous_features(train_dataset):
+    cont_features = []
+    for feature, feature_col in train_dataset.items():
+        unique_values = np.unique(feature_col)
+        num_unique_values = len(unique_values)
+
+        # We dont want to count Nan as a value
+        if np.isnan(unique_values).any():
+            num_unique_values -= 1
+            unique_values = unique_values[~np.isnan(unique_values)]
+
+        # Check if there are any non-integer values
+        fractional_part, _ = np.modf(unique_values)
+        non_integers_exist = np.any(fractional_part != 0)
+        if non_integers_exist:
+            cont_features.append(feature)
+
+    return cont_features
+
+def detect_feature_types(train_dataset):
+    print("Pipeline Stage 5 - Detecting Feature Types...")
+
+    binary_features = detect_binary_features(train_dataset)
+    cont_features = detect_numerical_continuous_features(train_dataset)
+    
+    feat_types = FEATURE_TYPES
+    for feature in train_dataset.keys():
+        if feature in binary_features:
+            feat_types[feature] = FeatureType.BINARY
+        elif feature in cont_features:
+            feat_types[feature] = FeatureType.CONTINUOUS
+    
+    return feat_types

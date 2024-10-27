@@ -1,80 +1,17 @@
 import numpy as np
 from implementations import *
-
-
-###### FEATURES SELECTION ########
-
-def list_features(x_train,y_train):
-
-    """
-    Returns the list of features selected
-
-    Args : 
-    x_train: numpy array of shape (N,D), D is the number of features.
-    y_train: numpy array of shape (N,), N is the number of samples.
-
-    Returns:
-
-    list_features: list, index of selected features 
-    """
-    
-    index_features = np.arange(x_train.shape[1])
-    nb_features =x_train.shape[1]
-
-    # We remove the features that are redundant
-    correlation_matrix = np.corrcoef(x_train, rowvar=False)
-    list_suppr = []
-    for i in range(nb_features):
-        for j in range(i+1,nb_features):
-            if  np.abs(correlation_matrix[i, j]) > 0.9:
-                corr_i = np.corrcoef(x_train[:, i], y_train)
-                corr_j = np.corrcoef(x_train[:, j], y_train)
-                if np.abs(corr_i[0,1]) < np.abs(corr_j[0,1]):
-                    list_suppr.append(i)
-                else:
-                    list_suppr.append(j)
-    x = x_train.copy()
-    x = np.delete(x, list_suppr, axis = 1)
-
-    index_features = np.delete(index_features, list_suppr)
-    # We keep only the features that have a correlation > 0.1 with the target
-    list_features =[]
-    for i in range(x.shape[1]):
-        corr = np.corrcoef(x[:, i], y_train)
-        if np.abs(corr[0,1]) >0.1:
-            list_features.append(i)
-    list_features = index_features[list_features]
-    return list_features    
-
-def select_features(x_train, y_train, x_test):
-    """
-    Returns the selected features for the train and test set
-
-    Args : 
-    x_train: numpy array of shape (N,D), D is the number of features.
-    y_train: numpy array of shape (N,), N is the number of training samples.
-    x_test: numpy array of shape (n,D), n is the number of test samples.
-
-    Returns:
-
-    x_train: numpy array of shape (N,d), d is the number of selected features.
-    x_test: numpy array of shape (N,d), d is the number of selected features.
-    """
-    features = list_features(x_train, y_train)
-    x_train = x_train[:, features]
-    x_test = x_test[:, features]
-    return x_train, x_test
+import eval
 
 ###### TRAINING THE MODEL #########
 
-def split_data(x, y, ratio, seed=1):
+def split_data(x, y, val_size, seed=1):
     """
     Split the dataset into training and validation sets
 
     Args:
         x: numpy array of shape (N,D), D is the number of features.
         y: numpy array of shape (N,), N is the number of samples.
-        ratio: scalar, the proportion of the training set.
+        val_size: scalar, the proportion of the training set.
         seed: scalar, the random seed
 
     Returns:
@@ -85,7 +22,7 @@ def split_data(x, y, ratio, seed=1):
     """
     ids = np.arange(x.shape[0])
     np.random.shuffle(ids)
-    split_index = int(ratio* len(ids))
+    split_index = int(val_size* len(ids))
     train_ids = ids[split_index:]
     validate_ids = ids[:split_index]
     x_train = x[train_ids,:]
@@ -138,24 +75,53 @@ def undersampling(x,y,proportion):
     y_undersample = np.concatenate((y[class_0_id], y[resample_id]), axis=0)
     return X_undersample, y_undersample
 
-def train(x, y, lr, max_iters, lambda_):
-    """
-    Train the model
+def undersample(x, y, undersampling_ratio):
+    healthy_samples_mask = np.where(y == 0)[0]
+    unhealthy_samples_mask = np.where(y == 1)[0]
 
-    Args  :
-        x: numpy array of shape (N,D), D is the number of features.
-        y: numpy array of shape (N,), N is the number of samples.
-        lr: scalar, learning rate.
-        max_iters: scalar, number of iterations.
-        lambda_: scalar, regularization parameter.
+    num_observations = len(healthy_samples_mask) // undersampling_ratio
+
+    random_healthy = np.random.choice(healthy_samples_mask, num_observations, replace=False)
+    indexes_kept = np.concat((random_healthy, unhealthy_samples_mask))
+
+    return x[indexes_kept], y[indexes_kept]
+
+# def train(x, y, lr, max_iters, lambda_):
+#     """
+#     Train the model
+
+#     Args  :
+#         x: numpy array of shape (N,D), D is the number of features.
+#         y: numpy array of shape (N,), N is the number of samples.
+#         lr: scalar, learning rate.
+#         max_iters: scalar, number of iterations.
+#         lambda_: scalar, regularization parameter.
         
-    Returns :
-        w: optimal weights, numpy array of shape(D,), D is the number of features.
-        loss: scalar
-    """
-    w_0 = np.zeros(x.shape[1])
-    w,loss = reg_logistic_regression(y, x, lr, w_0, max_iters, lambda_)
-    return w,loss
+#     Returns :
+#         w: optimal weights, numpy array of shape(D,), D is the number of features.
+#         loss: scalar
+#     """
+#     w_0 = np.zeros(x.shape[1])
+#     w,loss = reg_logistic_regression(y, x, lr, w_0, max_iters, lambda_)
+#     return w,loss
+
+def train(x_tr, y_tr, x_val, y_val, gamma, max_iters, lambda_, threshold):
+    w = np.zeros(x_tr.shape[1])
+    previous_loss = 100000
+    for i in range(max_iters):
+        loss, w = learning_by_gradient_descent(y_tr, x_tr, w, gamma=gamma, lambda_=lambda_)
+        val_loss = calculate_loss(y_val, x_val, w)
+        
+        if i % 20 == 0:
+            print(f"Iteration {i} - Train Loss: {loss} - Valid Loss: {val_loss}")
+
+        if i >= 100 and previous_loss - val_loss < threshold:
+            print(f"Converged in {i} iterations")
+            break
+
+        previous_loss = val_loss
+    return w, loss
+
 
 def predict_labels(w, x):
     """
@@ -172,35 +138,6 @@ def predict_labels(w, x):
     p = [sigmoid(x[i].T@w) for i in range(x.shape[0])]
     y_pred = np.array([1 if p[i] > 0.5 else 0 for i in range(len(p))])
     return y_pred
-
-###### TESTING THE MODEL #########
-def f1_score(y_true, y_pred):
-    """
-    Compute the F-1 score 
-    
-    Args :
-        y_true: numpy array of shape (N,), N is the number of samples.
-        y_pred: numpy array of shape (N,), predicted labels.
-    
-    Returns :
-        f1: float, F1-score.
-    """
-    # Compute True Positives (TP), False Positives (FP), et False Negatives (FN)
-    TP = np.sum((y_true == 1) & (y_pred == 1))
-    FP = np.sum((y_true == 0) & (y_pred == 1))
-    FN = np.sum((y_true == 1) & (y_pred == 0))
-    
-    # Calculer la précision et le rappel
-    precision = TP / (TP + FP) if (TP + FP) > 0 else 0
-    recall = TP / (TP + FN) if (TP + FN) > 0 else 0
-    
-    # Calculer le F1-score
-    if precision + recall == 0:
-        return 0
-    f1 = 2 * (precision * recall) / (precision + recall)
-    
-    return f1
-
 
 def build_k_indices(y, k_fold, seed):
     """
@@ -248,16 +185,9 @@ def cross_validation_k(y, x, k_indices, k, lambda_ = 0.001,lr =0.1,n_epochs =100
     x_test = x[k_indices[k]]
     y_test = y[k_indices[k]]
 
-    # Over or undersampling to rebalance the dataset
-    if sampling_method == 'oversampling':
-        x_train, y_train = oversampling(x_train, y_train, prop)
-    elif sampling_method == 'undersampling':
-        x_train, y_train = undersampling(x_train, y_train, prop)
-
-
     w,loss = train(x_train, y_train, lr, n_epochs, lambda_)
     y_pred = predict_labels(w, x_test)
-    f1 = f1_score(y_pred, y_test)
+    f1 = eval.f1_score(y_pred, y_test)
     return f1
 
 def cross_validation(y, x, k_fold, seed=1, lambda_ =0.001,lr =0.1,n_epochs =1000,sampling_method = 'oversampling',prop = 0.5):

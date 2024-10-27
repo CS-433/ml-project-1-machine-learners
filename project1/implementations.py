@@ -154,8 +154,20 @@ def sigmoid(t):
     Returns:
         scalar or numpy array
     """
-    return np.exp(t)/(1+np.exp(t))
+    return 1/(1+np.exp(-t))
 
+def calculate_loss(y, tx, w):
+    sig = sigmoid(tx @ w)
+    eps = 1e-8
+    # Add eps to ensure that we dont have log(0)
+    return float(np.sum(y * np.log(sig + eps) + (1 - y)*np.log(1 - sig + eps)) / -y.shape[0])
+
+def calculate_gradient(y, tx, w, lambda_):
+    sig = sigmoid(tx @ w)
+    return (tx.T @ (sig - y) / y.shape[0]) + 2*lambda_*w
+
+def learning_by_gradient_descent(y, tx, w, gamma, lambda_):
+    return calculate_loss(y, tx, w), w - gamma * calculate_gradient(y, tx, w, lambda_)
 
 def logistic_regression(y, tx, initial_w, max_iters, gamma):
     """implement logistic regression using gradient descent or SGD.
@@ -201,4 +213,18 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
         w = w - gamma*grad
     loss = np.mean([-y[i]*tx[i].T@w+ np.log(1+np.exp(tx[i].T@w)) for i in range(N)])
     return w, loss
-    
+
+# def learning_by_gradient_descent(y, tx, w, gamma):
+#     return calculate_loss(y, tx, w), w - gamma * calculate_gradient(y, tx, w)
+
+# def calculate_weighted_loss(y, tx, w, sample_weights):
+#     sig = sigmoid(tx @ w)
+#     return (np.sum(sample_weights * (y * np.log(sig + 0.00001) + (1 - y)*np.log(1 - sig + 0.00001))) / -np.sum(sample_weights))
+
+# def calculate_weighted_gradient(y, tx, w, sample_weights):
+#     sig = sigmoid(tx @ w)
+#     return tx.T @ (sample_weights * (sig - y)) / np.sum(sample_weights)
+
+# def learning_by_weighted_gradient_descent(y, tx, w, gamma, sample_weights):
+#     loss = calculate_weighted_loss(y, tx, w, sample_weights)
+#     return loss, w - gamma * calculate_weighted_gradient(y, tx, w, sample_weights)

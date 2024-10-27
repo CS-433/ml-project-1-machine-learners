@@ -1,7 +1,8 @@
-from implementations import *
-from model import *
-from helpers import *
-from data_preprocessing import *
+import implementations
+import model
+import helpers
+import data_preprocessing
+import eval
 import numpy as np
 import argparse
 
@@ -19,27 +20,27 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    #Load and preprocess the data
-    x_train, x_test, y_train,train_ids,test_ids = preprocess_data()
+    # Set random seed to ensure that results are deterministic
+    np.random.seed(42)
 
-    # Select the features 
-    x_train, x_test = select_features(x_train, y_train, x_test)
+    # Load and preprocess the data
+    x_train, x_test, y_train = data_preprocessing.preprocess_data()
+    test_ids = np.arange(x_test.shape[0]) + x_train.shape[0]
 
-    if args.sampling == 'oversampling':
-        x_train, y_train = oversampling(x_train, y_train, args.proportion)
-    elif args.sampling == 'undersampling':
-        x_train, y_train = undersampling(x_train, y_train, args.proportion)
-    #Train the model
+    if args.sampling == 'undersampling':
+        x_train_undersampled, y_train_undersampled = model.undersample(x_train, y_train, undersampling_ratio=5)
 
-    w, loss = train(x_train, y_train, lr=0.01, max_iters=1000, lambda_=0.01)
+    x_tr, x_val, y_tr, y_val = model.split_data(x_train_undersampled, y_train_undersampled, val_size=0.2)
 
-    #Predict the labels
+    w, loss = model.train(x_tr, y_tr, x_val, y_val, gamma=0.1, max_iters=1000, lambda_=0, threshold=1e-6)
 
-    y_pred = predict_labels(w, x_test)
+    # Predict the labels
+    y_pred_train = model.predict_labels(w, x_train)
+    y_pred = model.predict_labels(w, x_test)
+
+    eval.evaluate_predictions(y_train, y_pred_train)
+
     y_pred = y_pred*2-1
 
-    #Save the predictions
-
-    create_csv_submission(test_ids,y_pred, 'submission.csv')
-
-
+    # Save the predictions
+    helpers.create_csv_submission(test_ids,y_pred, 'submission.csv')

@@ -5,20 +5,23 @@ import numpy as np
 import helpers as hp
 import feature_types
 
-def drop_features(x_tr, x_te, feature_names, feat_indexes, features_to_drop):
-    remaining_features = [feature for feature in feature_names if feature not in features_to_drop]
-    indexes_to_keep = [feat_indexes[feature] for feature in remaining_features]
-    x_tr = x_tr[:, indexes_to_keep]
-    x_te = x_te[:, indexes_to_keep]
-    feature_names = remaining_features
-
-    new_feat_indexes = {}
-    for ind, feat in enumerate(feature_names):
-        new_feat_indexes[feat] = ind
-
-    return x_tr, x_te, feature_names, new_feat_indexes
-
 def load_original_dataset(data_dir):
+    """
+    Loads the original training and testing datasets from specified directory.
+
+    Parameters:
+    data_dir (str): Path to the directory containing dataset files. The function
+                    expects the directory to contain:
+                    - 'train_dataset.npy' for training data features.
+                    - 'test_dataset.npy' for testing data features.
+                    - 'train_targets.npy' for training data labels.
+
+    Returns:
+    tuple: A tuple containing:
+           - x_train (np.ndarray): Array of training data features.
+           - x_test (np.ndarray): Array of testing data features.
+           - y_train (np.ndarray): Array of training data labels.
+    """
     print("Pipeline Stage 1 - Loading Datasets...")
     x_train = np.load(f"{data_dir}/train_dataset.npy")
     x_test = np.load(f"{data_dir}/test_dataset.npy")
@@ -51,6 +54,17 @@ def merge_landline_cellphone_features(x_train, x_test, feat_indexes):
     return x_train, x_test
 
 def drop_useless_features(train_dataset, test_dataset):
+    """
+    Drops unwanted or redundant features.
+
+    Parameters:
+    train_dataset (dict): Dictionary containing training data features.
+    test_dataset (dict): Dictionary containing testing data features.
+
+    Returns:
+    - train_dataset (dict): Training dataset with specified features removed.
+    - test_dataset (dict): Testing dataset with specified features removed.
+    """
     print("Pipeline Stage 3 - Dropping Unwanted Features...")
     variables_to_drop = [
         "CTELENUM", "CTELNUM1", # -> they are always yes
@@ -67,6 +81,20 @@ def drop_useless_features(train_dataset, test_dataset):
     return train_dataset, test_dataset
 
 def replace_weird_values(train_dataset, test_dataset, abnormal_feature_values):
+    """
+    Replaces abnormal values in the training and testing datasets with their specified replacements.
+
+    Parameters:
+    train_dataset (dict): Dictionary of training data features, where each key is a feature name and the value is an array of feature values.
+    test_dataset (dict): Dictionary of testing data features, where each key is a feature name and the value is an array of feature values.
+    abnormal_feature_values (dict): A dictionary specifying abnormal values for each feature, structured as:
+                                    {feature_name: {abnormal_value: replacement_value, ...}, ...}
+                                    where each `abnormal_value` in a feature column is replaced by `replacement_value`.
+
+    Returns:
+    - train_dataset (dict): Training dataset with abnormal values replaced.
+    - test_dataset (dict): Testing dataset with abnormal values replaced.
+    """
     print("Pipeline Stage 4 - Replacing Abnormal Dataset Values...")
     def replace_values_with_dict(x, replace_dict):
         for value, replacement in replace_dict.items():
@@ -91,6 +119,13 @@ def replace_weird_values(train_dataset, test_dataset, abnormal_feature_values):
     return train_dataset, test_dataset
 
 def fill_nans(train_dataset, test_dataset, feat_types):
+    """Fills the NAN values in the dataset according to their feature type.
+
+    In the case of a binary or categorical, the values are filled with the mode
+    of the train array.
+    If the feature is continuous we use the mean, and if it is ordinal or numerical
+    discrete, the discrete mean is used.
+    """
     print("Pipeline Stage 6 - Filling Nan Values...")
     def mode(feature_col):
         unique_values, counts = np.unique(feature_col, return_counts=True, equal_nan=False)
@@ -131,6 +166,8 @@ def fill_nans(train_dataset, test_dataset, feat_types):
     return train_dataset, test_dataset
 
 def one_hot_categoricals(x_train, x_test, feature_names, feat_indexes, feat_types):
+    """Computes the one-hot categorical encoding of categorical features in the dataset
+    """
     print("Pipeline Stage 7 - One Hot Encoding Categoricals...")
     categorical_features = [feature for feature in feature_names if feat_types[feature] == feature_types.FeatureType.CATEGORICAL]
 
@@ -167,6 +204,9 @@ def one_hot_categoricals(x_train, x_test, feature_names, feat_indexes, feat_type
     return x_train, x_test, feature_names, feat_indexes
 
 def standardize(x_train, x_test):
+    """Performs standardization over a dataset to ensure
+    that all features are in the same scale
+    """
     print("Pipeline Stage 8 - Standardizing Data...")
     mean = np.mean(x_train, axis=0)
     std = np.std(x_train, axis=0)
@@ -238,6 +278,8 @@ def select_features(x_train, y_train, x_test):
 
 
 def add_bias_feature(x_train, x_test):
+    """Adds a bias feature column to a 2D array
+    """
     print("Pipeline Stage 9 - Adding Bias Feature...")
     bias = np.ones((x_train.shape[0], 1))
     bias_test = np.ones((x_test.shape[0], 1))
@@ -248,7 +290,7 @@ def add_bias_feature(x_train, x_test):
     return x_train, x_test
 
 
-def build_dict_representation(x, feature_names):
+def convert_array_to_dict(x, feature_names):
     """Converts a 2D numpy array into a dict of 1D numpy arrays.
 
     Args:
@@ -290,8 +332,8 @@ def preprocess_data():
         
     # Convert each dataset to a dict of arrays so we can manipulate features by name
     # This is similar to a dataframe in Pandas, but less efficient
-    train_dataset = build_dict_representation(x_train, feature_names)
-    test_dataset = build_dict_representation(x_test, feature_names)
+    train_dataset = convert_array_to_dict(x_train, feature_names)
+    test_dataset = convert_array_to_dict(x_test, feature_names)
 
     # x_train, x_test = merge_landline_cellphone_features(x_train, x_test, feat_indexes)
     train_dataset, test_dataset = drop_useless_features(train_dataset, test_dataset)

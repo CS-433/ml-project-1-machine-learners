@@ -23,24 +23,28 @@ if __name__ == "__main__":
     # Set random seed to ensure that results are deterministic
     np.random.seed(42)
 
-    # Load and preprocess the data
+    # Load and preprocess the data, ready for modelling
     x_train, x_test, y_train = data_preprocessing.preprocess_data()
-    test_ids = np.arange(x_test.shape[0]) + x_train.shape[0]
 
+    # Since the healthy class is overrepresented, undersampling is a good idea
+    # to improve predictions over the unhealthy class
     if args.sampling == 'undersampling':
         x_train_undersampled, y_train_undersampled = model.undersample(x_train, y_train, undersampling_ratio=5)
 
+    # Train our model with a validation set to prevent overfitting
     x_tr, x_val, y_tr, y_val = model.split_data(x_train_undersampled, y_train_undersampled, val_size=0.2)
-
     w, loss = model.train(x_tr, y_tr, x_val, y_val, gamma=0.1, max_iters=1000, lambda_=0, threshold=1e-6)
 
-    # Predict the labels
+    # Perform predictions over the train and test datasets
     y_pred_train = model.predict_labels(w, x_train)
     y_pred = model.predict_labels(w, x_test)
 
+    # Obtain classification metrics in order to assess the quality of our model
     eval.evaluate_predictions(y_train, y_pred_train)
 
+    # Convert the labels back to their original value range (-1, 1)
     y_pred = y_pred*2-1
 
     # Save the predictions
+    test_ids = np.arange(x_test.shape[0]) + x_train.shape[0]
     helpers.create_csv_submission(test_ids,y_pred, 'submission.csv')

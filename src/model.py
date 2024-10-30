@@ -1,5 +1,5 @@
 import numpy as np
-from implementations import *
+from final_folder.implementations import *
 import eval
 
 ###### TRAINING THE MODEL #########

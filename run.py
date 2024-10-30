@@ -1,4 +1,4 @@
-import implementations
+import final_folder.implementations as implementations
 import model
 import helpers
 import data_preprocessing

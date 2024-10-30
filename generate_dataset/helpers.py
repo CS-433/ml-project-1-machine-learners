@@ -27,15 +27,19 @@ def load_csv_data(data_path, sub_sample=False, max_rows=None):
         skip_header=1,
         dtype=int,
         usecols=1,
-        max_rows=max_rows
+        max_rows=max_rows,
     )
     x_train = np.genfromtxt(
-        os.path.join(data_path, "x_train.csv"), delimiter=",", skip_header=1
-        ,max_rows=max_rows
+        os.path.join(data_path, "x_train.csv"),
+        delimiter=",",
+        skip_header=1,
+        max_rows=max_rows,
     )
     x_test = np.genfromtxt(
-        os.path.join(data_path, "x_test.csv"), delimiter=",", skip_header=1
-        ,max_rows=max_rows
+        os.path.join(data_path, "x_test.csv"),
+        delimiter=",",
+        skip_header=1,
+        max_rows=max_rows,
     )
 
     train_ids = x_train[:, 0].astype(dtype=int)
@@ -73,6 +77,7 @@ def create_csv_submission(ids, y_pred, name):
         writer.writeheader()
         for r1, r2 in zip(ids, y_pred):
             writer.writerow({"Id": int(r1), "Prediction": int(r2)})
+
 
 def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
     """

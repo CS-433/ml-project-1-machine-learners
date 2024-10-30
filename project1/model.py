@@ -4,6 +4,7 @@ import eval
 
 ###### TRAINING THE MODEL #########
 
+
 def split_data(x, y, val_size, seed=1):
     """
     Split the dataset into training and validation sets
@@ -22,16 +23,17 @@ def split_data(x, y, val_size, seed=1):
     """
     ids = np.arange(x.shape[0])
     np.random.shuffle(ids)
-    split_index = int(val_size* len(ids))
+    split_index = int(val_size * len(ids))
     train_ids = ids[split_index:]
     validate_ids = ids[:split_index]
-    x_train = x[train_ids,:]
+    x_train = x[train_ids, :]
     y_train = y[train_ids]
-    x_validate = x[validate_ids,:]
+    x_validate = x[validate_ids, :]
     y_validate = y[validate_ids]
     return x_train, x_validate, y_train, y_validate
 
-def oversampling(x,y,proportion):
+
+def oversampling(x, y, proportion):
     """
     Oversample the minority class
 
@@ -39,21 +41,25 @@ def oversampling(x,y,proportion):
         x: numpy array of shape (N,D), D is the number of features.
         y: numpy array of shape (N,), N is the number of samples.
         proportion: scalar, the proportion of the minority class in the new dataset
-    
+
     Returns :
         X_oversample: numpy array of shape (N,D), the oversampled dataset
         y_oversample: numpy array of shape (N,), the oversampled labels
     """
-    
+
     class_0_id = np.where(y == 0)[0]
     class_1_id = np.where(y == 1)[0]
-    resample_id = np.random.choice(class_1_id, size=int(len(class_0_id)*proportion/(1-proportion)), replace=True)
+    resample_id = np.random.choice(
+        class_1_id,
+        size=int(len(class_0_id) * proportion / (1 - proportion)),
+        replace=True,
+    )
     X_oversample = np.concatenate((x[class_0_id], x[resample_id]), axis=0)
     y_oversample = np.concatenate((y[class_0_id], y[resample_id]), axis=0)
     return X_oversample, y_oversample
 
-def undersampling(x,y,proportion):
 
+def undersampling(x, y, proportion):
     """
     Undersample the majority class
 
@@ -70,10 +76,15 @@ def undersampling(x,y,proportion):
 
     class_0_id = np.where(y == 0)[0]
     class_1_id = np.where(y == 1)[0]
-    resample_id = np.random.choice(class_0_id, size=int(len(class_1_id)*(1-proportion)/proportion), replace=False)
+    resample_id = np.random.choice(
+        class_0_id,
+        size=int(len(class_1_id) * (1 - proportion) / proportion),
+        replace=False,
+    )
     X_undersample = np.concatenate((x[class_0_id], x[resample_id]), axis=0)
     y_undersample = np.concatenate((y[class_0_id], y[resample_id]), axis=0)
     return X_undersample, y_undersample
+
 
 def undersample(x, y, undersampling_ratio):
     healthy_samples_mask = np.where(y == 0)[0]
@@ -81,10 +92,13 @@ def undersample(x, y, undersampling_ratio):
 
     num_observations = len(healthy_samples_mask) // undersampling_ratio
 
-    random_healthy = np.random.choice(healthy_samples_mask, num_observations, replace=False)
+    random_healthy = np.random.choice(
+        healthy_samples_mask, num_observations, replace=False
+    )
     indexes_kept = np.concat((random_healthy, unhealthy_samples_mask))
 
     return x[indexes_kept], y[indexes_kept]
+
 
 # def train(x, y, lr, max_iters, lambda_):
 #     """
@@ -96,7 +110,7 @@ def undersample(x, y, undersampling_ratio):
 #         lr: scalar, learning rate.
 #         max_iters: scalar, number of iterations.
 #         lambda_: scalar, regularization parameter.
-        
+
 #     Returns :
 #         w: optimal weights, numpy array of shape(D,), D is the number of features.
 #         loss: scalar
@@ -105,13 +119,16 @@ def undersample(x, y, undersampling_ratio):
 #     w,loss = reg_logistic_regression(y, x, lr, w_0, max_iters, lambda_)
 #     return w,loss
 
+
 def train(x_tr, y_tr, x_val, y_val, gamma, max_iters, lambda_, threshold):
     w = np.zeros(x_tr.shape[1])
     previous_loss = 100000
     for i in range(max_iters):
-        loss, w = learning_by_gradient_descent(y_tr, x_tr, w, gamma=gamma, lambda_=lambda_)
+        loss, w = learning_by_gradient_descent(
+            y_tr, x_tr, w, gamma=gamma, lambda_=lambda_
+        )
         val_loss = calculate_loss(y_val, x_val, w)
-        
+
         if i % 20 == 0:
             print(f"Iteration {i} - Train Loss: {loss} - Valid Loss: {val_loss}")
 
@@ -125,9 +142,9 @@ def train(x_tr, y_tr, x_val, y_val, gamma, max_iters, lambda_, threshold):
 
 def predict_labels(w, x):
     """
-    Predict the labels 
+    Predict the labels
 
-    Args : 
+    Args :
         w : numpy array of shape (D,), D is the number of features, weights of the model
         x: numpy array of shape (N,D), N is the number of samples.
 
@@ -135,9 +152,10 @@ def predict_labels(w, x):
         y_pred : numpy array of shape (N,D), the predicted labels
 
     """
-    p = [sigmoid(x[i].T@w) for i in range(x.shape[0])]
+    p = [sigmoid(x[i].T @ w) for i in range(x.shape[0])]
     y_pred = np.array([1 if p[i] > 0.5 else 0 for i in range(len(p))])
     return y_pred
+
 
 def build_k_indices(y, k_fold, seed):
     """
@@ -159,7 +177,18 @@ def build_k_indices(y, k_fold, seed):
     k_indices = [indices[k * interval : (k + 1) * interval] for k in range(k_fold)]
     return np.array(k_indices)
 
-def cross_validation_k(y, x, k_indices, k, lambda_ = 0.001,lr =0.1,n_epochs =1000,sampling_method = 'oversampling',prop = 0.5):
+
+def cross_validation_k(
+    y,
+    x,
+    k_indices,
+    k,
+    lambda_=0.001,
+    lr=0.1,
+    n_epochs=1000,
+    sampling_method="oversampling",
+    prop=0.5,
+):
     """
     Return the f1 score for a fold corresponding to k_indices
 
@@ -167,7 +196,7 @@ def cross_validation_k(y, x, k_indices, k, lambda_ = 0.001,lr =0.1,n_epochs =100
         y : numpy array of shape (N,), N is the number of samples.
         x: numpy array of shape (N,D), D is the number of features.
         k_indices:  2D array returned by build_k_indices()
-        k: scalar, the k-th fold 
+        k: scalar, the k-th fold
         lambda_: scalar, regularization parameter.
         lr: scalar, learning rate.
         n_epochs: scalar, number of iterations.
@@ -185,14 +214,25 @@ def cross_validation_k(y, x, k_indices, k, lambda_ = 0.001,lr =0.1,n_epochs =100
     x_test = x[k_indices[k]]
     y_test = y[k_indices[k]]
 
-    w,loss = train(x_train, y_train, lr, n_epochs, lambda_)
+    w, loss = train(x_train, y_train, lr, n_epochs, lambda_)
     y_pred = predict_labels(w, x_test)
     f1 = eval.f1_score(y_pred, y_test)
     return f1
 
-def cross_validation(y, x, k_fold, seed=1, lambda_ =0.001,lr =0.1,n_epochs =1000,sampling_method = 'oversampling',prop = 0.5):
+
+def cross_validation(
+    y,
+    x,
+    k_fold,
+    seed=1,
+    lambda_=0.001,
+    lr=0.1,
+    n_epochs=1000,
+    sampling_method="oversampling",
+    prop=0.5,
+):
     """
-    return mean F-1 score over the k folds 
+    return mean F-1 score over the k folds
 
     Args:
 
@@ -212,5 +252,7 @@ def cross_validation(y, x, k_fold, seed=1, lambda_ =0.001,lr =0.1,n_epochs =1000
     k_indices = build_k_indices(y, k_fold, seed)
     f1 = 0
     for k in range(k_fold):
-        f1 += cross_validation_k(y, x, k_indices, k, lambda_,lr,n_epochs,sampling_method,prop)
-    return float(f1/k_fold)
+        f1 += cross_validation_k(
+            y, x, k_indices, k, lambda_, lr, n_epochs, sampling_method, prop
+        )
+    return float(f1 / k_fold)

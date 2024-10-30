@@ -77,7 +77,7 @@ def merge_landline_cellphone_features(x_train, x_test, feat_indexes):
 
 def drop_useless_features(x_train, x_test, feature_names, feat_indexes):
     print("Pipeline Stage 3 - Dropping Unwanted Features...")
-    variables_to_drop = [  # TODO: move to conf file
+    variables_to_drop = [
         "CTELENUM",
         "CTELNUM1",  # -> they are always yes
         "LADULT",

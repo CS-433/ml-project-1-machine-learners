@@ -60,7 +60,6 @@ git clone https://github.com/CS-433/ml-project-1-machine-learners/blob/final_bra
 The code required to have these packages installed :
 
 - numpy
-- json
 - matplotlib
 
 ## Running the model

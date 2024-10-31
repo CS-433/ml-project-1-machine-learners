@@ -1,11 +1,12 @@
 import numpy as np
-from final_folder.implementations import *
-import eval
 
-###### TRAINING THE MODEL #########
+import implementations
+from src import evaluation
 
 
-def split_data(x, y, val_size, seed=1):
+def split_data(
+    x: np.ndarray, y: np.ndarray, val_size: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Split the dataset into training and validation sets
 
@@ -13,7 +14,6 @@ def split_data(x, y, val_size, seed=1):
         x: numpy array of shape (N,D), D is the number of features.
         y: numpy array of shape (N,), N is the number of samples.
         val_size: scalar, the proportion of the training set.
-        seed: scalar, the random seed
 
     Returns:
         x_train: numpy array of shape (N_train,D), the training set
@@ -33,64 +33,26 @@ def split_data(x, y, val_size, seed=1):
     return x_train, x_validate, y_train, y_validate
 
 
-def oversampling(x, y, proportion):
+def undersample(
+    x: np.ndarray, y: np.ndarray, undersampling_ratio: float
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Oversample the minority class
+    Undersample the majority class (healthy class) to obtain a balanced dataset.
 
-    Args :
+    Args:
         x: numpy array of shape (N,D), D is the number of features.
         y: numpy array of shape (N,), N is the number of samples.
-        proportion: scalar, the proportion of the minority class in the new dataset
+        undersampling ratio: scalar, the proportion of the majority
+        class samples to keep.
 
-    Returns :
-        X_oversample: numpy array of shape (N,D), the oversampled dataset
-        y_oversample: numpy array of shape (N,), the oversampled labels
+    Returns:
+        x_train_undersampled: undersampled numpy array with shape (N_0*undersampling_ratio + N_1, D)
+        y_train_undersampled: undersampled numpy array with shape (N_0*undersampling_ratio + N_1,)
     """
-
-    class_0_id = np.where(y == 0)[0]
-    class_1_id = np.where(y == 1)[0]
-    resample_id = np.random.choice(
-        class_1_id,
-        size=int(len(class_0_id) * proportion / (1 - proportion)),
-        replace=True,
-    )
-    X_oversample = np.concatenate((x[class_0_id], x[resample_id]), axis=0)
-    y_oversample = np.concatenate((y[class_0_id], y[resample_id]), axis=0)
-    return X_oversample, y_oversample
-
-
-def undersampling(x, y, proportion):
-    """
-    Undersample the majority class
-
-    Args :
-        x: numpy array of shape (N,D), D is the number of features.
-        y: numpy array of shape (N,), N is the number of samples.
-        proportion: scalar, the proportion of the minority class in the new dataset
-
-    Returns :
-
-        X_oversample: numpy array of shape (N,D), the undersampled dataset
-        y_oversample: numpy array of shape (N,), the undersampled labels
-    """
-
-    class_0_id = np.where(y == 0)[0]
-    class_1_id = np.where(y == 1)[0]
-    resample_id = np.random.choice(
-        class_0_id,
-        size=int(len(class_1_id) * (1 - proportion) / proportion),
-        replace=False,
-    )
-    X_undersample = np.concatenate((x[class_0_id], x[resample_id]), axis=0)
-    y_undersample = np.concatenate((y[class_0_id], y[resample_id]), axis=0)
-    return X_undersample, y_undersample
-
-
-def undersample(x, y, undersampling_ratio):
     healthy_samples_mask = np.where(y == 0)[0]
     unhealthy_samples_mask = np.where(y == 1)[0]
 
-    num_observations = len(healthy_samples_mask) // undersampling_ratio
+    num_observations = int(len(healthy_samples_mask) * undersampling_ratio)
 
     random_healthy = np.random.choice(
         healthy_samples_mask, num_observations, replace=False
@@ -100,36 +62,47 @@ def undersample(x, y, undersampling_ratio):
     return x[indexes_kept], y[indexes_kept]
 
 
-# def train(x, y, lr, max_iters, lambda_):
-#     """
-#     Train the model
+def train(
+    x_tr: np.ndarray,
+    y_tr: np.ndarray,
+    x_val: np.ndarray,
+    y_val: np.ndarray,
+    gamma: float,
+    max_iters: int,
+    lambda_: float,
+    threshold: float = 1e-6,
+    verbose: bool = True,
+) -> tuple[np.ndarray, float]:
+    """
+    Train a regularized logistic regression model with a validation set.
 
-#     Args  :
-#         x: numpy array of shape (N,D), D is the number of features.
-#         y: numpy array of shape (N,), N is the number of samples.
-#         lr: scalar, learning rate.
-#         max_iters: scalar, number of iterations.
-#         lambda_: scalar, regularization parameter.
-
-#     Returns :
-#         w: optimal weights, numpy array of shape(D,), D is the number of features.
-#         loss: scalar
-#     """
-#     w_0 = np.zeros(x.shape[1])
-#     w,loss = reg_logistic_regression(y, x, lr, w_0, max_iters, lambda_)
-#     return w,loss
-
-
-def train(x_tr, y_tr, x_val, y_val, gamma, max_iters, lambda_, threshold):
+    Args:
+        x_tr: numpy array of shape (N_train, D), the training dataset
+        y_tr: numpy array of shape (N_train,), the training labels.
+        x_val: numpy array of shape (N_val, D), the validation dataset,
+        used to assess when we should stop training.
+        y_val: numpy array of shape (N_val,), the validation labels.
+        gamma: the learning rate of our model
+        max_iters: the maximum number of iterations that the model will be trained in
+        lambda_: scalar, the regularization parameter of the reg_logistic_regression
+        threshold (Optional): scalar that contains the minimum improvement that there should be between iterations.
+        If this is not satisfied, we perform early stopping in order to prevent overfitting.
+        verbose (Optional): boolean that indicates whether to print information about the training loop
+        
+    Returns:
+        w: numpy array with shape (D,) that contains the trained weights for every
+        feature in the dataset
+        loss: scalar containing the negative log likelihood loss over the training set
+    """
     w = np.zeros(x_tr.shape[1])
     previous_loss = 100000
     for i in range(max_iters):
-        loss, w = learning_by_gradient_descent(
+        loss, w = implementations.learning_by_gradient_descent(
             y_tr, x_tr, w, gamma=gamma, lambda_=lambda_
         )
-        val_loss = calculate_loss(y_val, x_val, w)
+        val_loss = implementations.calculate_loss(y_val, x_val, w)
 
-        if i % 20 == 0:
+        if verbose and i % 20 == 0:
             print(f"Iteration {i} - Train Loss: {loss} - Valid Loss: {val_loss}")
 
         if i >= 100 and previous_loss - val_loss < threshold:
@@ -140,23 +113,25 @@ def train(x_tr, y_tr, x_val, y_val, gamma, max_iters, lambda_, threshold):
     return w, loss
 
 
-def predict_labels(w, x):
+def predict_labels(w: np.ndarray, x: np.ndarray) -> np.ndarray:
     """
-    Predict the labels
+    This method gives the predictions of a logistic regression model with
+    weights 'w' over a dataset 'x'.
 
     Args :
-        w : numpy array of shape (D,), D is the number of features, weights of the model
+        w: numpy array of shape (D,), D is the number of features, weights of the model
         x: numpy array of shape (N,D), N is the number of samples.
 
     Returns :
         y_pred : numpy array of shape (N,D), the predicted labels
 
     """
-    p = [sigmoid(x[i].T @ w) for i in range(x.shape[0])]
+    p = [implementations.sigmoid(x[i].T @ w) for i in range(x.shape[0])]
     y_pred = np.array([1 if p[i] > 0.5 else 0 for i in range(len(p))])
     return y_pred
 
 
+# TODO: do we keep this?
 def build_k_indices(y, k_fold, seed):
     """
     Build k indices for k-fold.
@@ -216,7 +191,7 @@ def cross_validation_k(
 
     w, loss = train(x_train, y_train, lr, n_epochs, lambda_)
     y_pred = predict_labels(w, x_test)
-    f1 = eval.f1_score(y_pred, y_test)
+    f1 = evaluation.compute_f1_score(y_pred, y_test)
     return f1
 
 

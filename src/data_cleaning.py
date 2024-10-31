@@ -2,59 +2,101 @@ import numpy as np
 
 from src import feature_type_detection
 
+def merge_cstate_stateres(train_dataset, test_dataset):
+    """
+    Merge the CSTATE and STATERES features, since they represent
+    the same feature for the cellphone and landline interviews
+    
+    Args:
+        train_dataset: Dictionary containing training data features.
+        test_dataset: Dictionary containing test data features.
+    
+    Returns:
+        train_dataset with CSTATE containing the merged array
+        test_dataset with CSTATE containing the merged array
+    """
+    for dataset in [train_dataset, test_dataset]:
+        ctstate_array = dataset["CSTATE"]
+        stateres_array = dataset["STATERES"]
+        # Merge both arrays to a unique one
+        ctstate_array = np.where(
+            np.isnan(ctstate_array), stateres_array, ctstate_array
+        )
+        dataset["CSTATE"] = ctstate_array
+    
+    return train_dataset, test_dataset
 
-# TODO
-def merge_landline_cellphone_features(x_train, x_test, feat_indexes):
+def merge_pvtresd1_pvtresd2(train_dataset, test_dataset):
+    """
+    Merge the PVTRESD1 and PVTRESD2 features, since they represent
+    the same feature for the cellphone and landline interviews
+    
+    Args:
+        train_dataset: Dictionary containing training data features.
+        test_dataset: Dictionary containing test data features.
+    
+    Returns:
+        train_dataset with PVTRESD1 containing the merged array
+        test_dataset with PVTRESD1 containing the merged array
+    """
+    for dataset in [train_dataset, test_dataset]:
+        pvtresd1_array = dataset["PVTRESD1"]
+        pvtresd2_array = dataset["PVTRESD2"]
+        # Merge both arrays to a unique one
+        pvtresd1_array = np.where(
+            np.isnan(pvtresd1_array), pvtresd2_array, pvtresd1_array
+        )
+        dataset["PVTRESD1"] = pvtresd1_array
+    
+    return train_dataset, test_dataset
+
+def merge_numadult_hhadult(train_dataset, test_dataset):
+    """
+    Merge the HHADULT and NUMADULT features, since they represent
+    the same feature for the cellphone and landline interviews
+    
+    Args:
+        train_dataset: Dictionary containing training data features.
+        test_dataset: Dictionary containing test data features.
+    
+    Returns:
+        train_dataset with HHADULT containing the merged array
+        test_dataset with HHADULT containing the merged array
+    """
+    for dataset in [train_dataset, test_dataset]:
+        num_adult_array = dataset["NUMADULT"]
+        hh_adult_array = dataset["HHADULT"]
+        # Clip HHADULT to 6 so its in the same format as numadult
+        hh_adult_array = np.where(
+            (hh_adult_array >= 6) & (hh_adult_array <= 76), 6, hh_adult_array
+        )
+        # Merge both arrays to a unique one
+        hh_adult_array = np.where(
+            np.isnan(hh_adult_array), num_adult_array, hh_adult_array
+        )
+        dataset["HHADULT"] = hh_adult_array
+    
+    return train_dataset, test_dataset
+
+def merge_landline_cellphone_features(train_dataset, test_dataset):
+    """
+    Merge features that represent the same information for the cellphone
+    and landline interviews separately.
+    
+    Args:
+        train_dataset: Dictionary containing training data features.
+        test_dataset: Dictionary containing test data features.
+    
+    Returns:
+        train_dataset with merged features
+        test_dataset with merged features
+    """
     print("Pipeline Stage 2 - Merging Landline and Cellphone Features...")
-    cstate_idx = feat_indexes["CSTATE"]
-
-    x_train[:, cstate_idx] = np.where(
-        np.isnan(x_train[:, cstate_idx]), 1, x_train[:, cstate_idx]
-    )
-    x_test[:, cstate_idx] = np.where(
-        np.isnan(x_test[:, cstate_idx]), 1, x_test[:, cstate_idx]
-    )
-
-    pvtresd1_idx = feat_indexes["PVTRESD1"]
-    pvtresd2_idx = feat_indexes["PVTRESD2"]
-
-    x_train[:, pvtresd1_idx] = np.where(
-        np.isnan(x_train[:, pvtresd1_idx]),
-        x_train[:, pvtresd2_idx],
-        x_train[:, pvtresd1_idx],
-    )
-    x_test[:, pvtresd1_idx] = np.where(
-        np.isnan(x_test[:, pvtresd1_idx]),
-        x_test[:, pvtresd2_idx],
-        x_test[:, pvtresd1_idx],
-    )
-
-    numadult_idx = feat_indexes["NUMADULT"]
-    hhadult_idx = feat_indexes["HHADULT"]
-
-    x_train[:, hhadult_idx] = np.where(
-        (x_train[:, hhadult_idx] >= 6) & (x_train[:, hhadult_idx] <= 76),
-        6,
-        x_train[:, hhadult_idx],
-    )
-    x_test[:, hhadult_idx] = np.where(
-        (x_test[:, hhadult_idx] >= 6) & (x_test[:, hhadult_idx] <= 76),
-        6,
-        x_test[:, hhadult_idx],
-    )
-
-    x_train[:, hhadult_idx] = np.where(
-        np.isnan(x_train[:, hhadult_idx]),
-        x_train[:, numadult_idx],
-        x_train[:, hhadult_idx],
-    )
-    x_test[:, hhadult_idx] = np.where(
-        np.isnan(x_test[:, hhadult_idx]),
-        x_test[:, numadult_idx],
-        x_test[:, hhadult_idx],
-    )
-
-    return x_train, x_test
+    train_dataset, test_dataset = merge_cstate_stateres(train_dataset, test_dataset)
+    train_dataset, test_dataset = merge_pvtresd1_pvtresd2(train_dataset, test_dataset)
+    train_dataset, test_dataset = merge_numadult_hhadult(train_dataset, test_dataset)
+    
+    return train_dataset, test_dataset
 
 
 def drop_useless_features(
@@ -65,9 +107,9 @@ def drop_useless_features(
     """
     Drops unwanted or redundant features.
 
-    Parameters:
+    Args:
     train_dataset: Dictionary containing training data features.
-    test_dataset: Dictionary containing testing data features.
+    test_dataset: Dictionary containing test data features.
     features_to_drop: List of features to drop from the dataset
 
     Returns:
@@ -110,9 +152,9 @@ def replace_weird_values(
     """
     Replaces abnormal values in the training and testing datasets with their specified replacements.
 
-    Parameters:
+    Args:
         train_dataset: Dictionary of training data features, where each key is a feature name and the value is an array of feature values.
-        test_dataset: Dictionary of testing data features, where each key is a feature name and the value is an array of feature values.
+        test_dataset: Dictionary of test data features, where each key is a feature name and the value is an array of feature values.
         abnormal_feature_values: A dictionary specifying abnormal values for each feature, structured as:
         {feature_name: {abnormal_value: replacement_value}}
         where each `abnormal_value` in a feature column is replaced by `replacement_value`.
@@ -240,7 +282,7 @@ def fill_nans(
 
     Args:
         train_dataset: Dictionary of training data features, where each key is a feature name and the value is an array of feature values.
-        test_dataset: Dictionary of testing data features, where each key is a feature name and the value is an array of feature values.
+        test_dataset: Dictionary of test data features, where each key is a feature name and the value is an array of feature values.
         feat_types: Dictionary containing every feature as key and their respective types as value
 
     Returns:

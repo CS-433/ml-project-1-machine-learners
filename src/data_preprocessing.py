@@ -97,7 +97,7 @@ def preprocess_data(
     train_dataset = convert_array_to_dict(x_train, config.FEATURE_NAMES)
     test_dataset = convert_array_to_dict(x_test, config.FEATURE_NAMES)
 
-    # x_train, x_test = merge_landline_cellphone_features(x_train, x_test, feat_indexes) # TODO
+    train_dataset, test_dataset = data_cleaning.merge_landline_cellphone_features(train_dataset, test_dataset)
     train_dataset, test_dataset = data_cleaning.drop_useless_features(
         train_dataset, test_dataset, features_to_drop=config.FEATURES_TO_DROP
     )

@@ -3,64 +3,105 @@ import numpy as np
 from src import feature_type_detection
 
 
-# TODO
-def one_hot_categoricals(x_train, x_test, feature_names, feat_indexes, feat_types):
-    """Computes the one-hot categorical encoding of categorical features in the dataset"""
-    print("Pipeline Stage 7 - One Hot Encoding Categoricals...")
-    categorical_features = [
-        feature
-        for feature in feature_names
-        if feat_types[feature] == feature_type_detection.FeatureType.CATEGORICAL
-    ]
+def separate_categorical_features(
+    train_dataset: dict[str, np.ndarray],
+    test_dataset: dict[str, np.ndarray],
+    categorical_features: list[str],
+) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], np.ndarray, np.ndarray]:
+    """
+    Separate dataset between categorical features and the rest.
 
-    def one_hot_encode(x_train, x_test, features):
-        one_hots_tr = []
-        one_hots_test = []
-        for feature in features:
-            index = feat_indexes[feature]
-            feature_col = x_train[:, index]
-            unique_values = np.unique(feature_col)
-            one_hot = np.zeros((x_train.shape[0], len(unique_values)))
+    This is helpful to speedup categorical encoding and numerical standardization.
 
-            feature_col_test = x_test[:, index]
-            one_hot_test = np.zeros((x_test.shape[0], len(unique_values)))
+    Args:
+        train_dataset: Dictionary of training data features, where each key is a feature name and the value is an array of feature values.
+        test_dataset: Dictionary of test data features, where each key is a feature name and the value is an array of feature values.
+        categorical_features: List of the categorical features in the dataset
 
-            for i, category in enumerate(feature_col):
-                index = np.where(unique_values == category)
-                one_hot[i, index] = 1  # Set the corresponding index to 1
-
-            for i, category in enumerate(feature_col_test):
-                index = np.where(unique_values == category)
-                one_hot_test[i, index] = 1  # Set the corresponding index to 1
-
-            one_hots_tr.append(one_hot)
-            one_hots_test.append(one_hot_test)
-        return np.concatenate(one_hots_tr, axis=1), np.concatenate(
-            one_hots_test, axis=1
-        )
-
-    one_hot_tr, one_hot_te = one_hot_encode(
-        x_train, x_test, features=categorical_features
-    )
-    # remove one-hotted variables from datasets
-    x_train, x_test, feature_names, feat_indexes = drop_features(
-        x_train,
-        x_test,
-        feature_names,
-        feat_indexes,
-        features_to_drop=categorical_features,
-    )
-
-    # Remove the corresponding features from our datasets
+    Returns:
+        train_dataset: Dictionary of training data features, where each key is a feature name and the value is an array of feature values.
+        test_dataset: Dictionary of test data features, where each key is a feature name and the value is an array of feature values.
+    """
+    x_train_cat = []
+    x_test_cat = []
     for feature in categorical_features:
-        train_dataset.pop(feature, None)
-        test_dataset.pop(feature, None)
+        array = train_dataset.pop(feature, None)
+        x_train_cat.append(array)
+        array_te = test_dataset.pop(feature, None)
+        x_test_cat.append(array_te)
 
-    return train_dataset, test_dataset
+    x_train_cat = np.stack(x_train_cat, axis=1)
+    x_test_cat = np.stack(x_test_cat, axis=1)
 
-    x_train = np.hstack((x_train, one_hot_tr))
-    x_test = np.hstack((x_test, one_hot_te))
-    return x_train, x_test, feature_names, feat_indexes
+    return train_dataset, test_dataset, x_train_cat, x_test_cat
+
+
+def binary_encode_column(column: np.ndarray, unique_train_values: list[float]) -> np.ndarray:
+    """
+    Encode a column with binary encoding using the unique values from the training set.
+
+    Parameters:
+        column: The column to be encoded.
+        unique_train_values: The unique values from the training dataset.
+
+    Returns:
+        binary_encoded: Binary encoded matrix for the column.
+    """
+    # Create a mapping from unique training values to integers
+    value_to_int = {value: idx for idx, value in enumerate(unique_train_values)}
+
+    # Encode the column using the mapping, assigning unseen values to 0
+    integer_encoded = np.array([value_to_int.get(value, -1) for value in column])
+
+    # Determine the number of bits needed for binary encoding
+    max_bits = len(bin(len(unique_train_values) - 1)) - 2
+
+    # Create a binary encoded matrix
+    binary_encoded = np.zeros((len(integer_encoded), max_bits), dtype=np.uint8)
+
+    # Fill in the binary representation for known values
+    for i, value in enumerate(integer_encoded):
+        if value != -1:  # Only process known values
+            binary_representation = np.binary_repr(value, width=max_bits)
+            binary_encoded[i] = np.array(list(binary_representation), dtype=np.uint8)
+
+    return binary_encoded
+
+
+def binary_encode_multiple_features(x_train: np.ndarray, x_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Perform binary encoding over multiple categorical columns, using training data for reference.
+
+    Parameters:
+        x_train: 2D array for training data where each column is a categorical feature.
+        x_test: 2D array for test data where each column is a categorical feature.
+
+    Returns:
+        binary_encoded_train: The binary encoded version of the training input.
+        binary_encoded_test: The binary encoded version of the test input.
+    """
+    binary_encoded_train = []
+    binary_encoded_test = []
+
+    # Loop through each feature in training data and perform binary encoding
+    for col in range(x_train.shape[1]):
+        train_arr = x_train[:, col]
+        test_arr = x_test[:, col]
+        unique_values = np.unique(train_arr)
+
+        # Encode training data
+        binary_encoded_col_train = binary_encode_column(train_arr, unique_values)
+        binary_encoded_train.append(binary_encoded_col_train)
+
+        # Encode test data using the same unique values from the training set
+        binary_encoded_col_test = binary_encode_column(test_arr, unique_values)
+        binary_encoded_test.append(binary_encoded_col_test)
+
+    # Concatenate all binary encoded columns horizontally for train and test
+    binary_encoded_train = np.hstack(binary_encoded_train)
+    binary_encoded_test = np.hstack(binary_encoded_test)
+
+    return binary_encoded_train, binary_encoded_test
 
 
 def list_features(x_train: np.ndarray, y_train: np.ndarray) -> list[int]:

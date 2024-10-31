@@ -2,15 +2,16 @@ import numpy as np
 
 from src import feature_type_detection
 
+
 def merge_cstate_stateres(train_dataset, test_dataset):
     """
     Merge the CSTATE and STATERES features, since they represent
     the same feature for the cellphone and landline interviews
-    
+
     Args:
         train_dataset: Dictionary containing training data features.
         test_dataset: Dictionary containing test data features.
-    
+
     Returns:
         train_dataset with CSTATE containing the merged array
         test_dataset with CSTATE containing the merged array
@@ -19,22 +20,21 @@ def merge_cstate_stateres(train_dataset, test_dataset):
         ctstate_array = dataset["CSTATE"]
         stateres_array = dataset["STATERES"]
         # Merge both arrays to a unique one
-        ctstate_array = np.where(
-            np.isnan(ctstate_array), stateres_array, ctstate_array
-        )
+        ctstate_array = np.where(np.isnan(ctstate_array), stateres_array, ctstate_array)
         dataset["CSTATE"] = ctstate_array
-    
+
     return train_dataset, test_dataset
+
 
 def merge_pvtresd1_pvtresd2(train_dataset, test_dataset):
     """
     Merge the PVTRESD1 and PVTRESD2 features, since they represent
     the same feature for the cellphone and landline interviews
-    
+
     Args:
         train_dataset: Dictionary containing training data features.
         test_dataset: Dictionary containing test data features.
-    
+
     Returns:
         train_dataset with PVTRESD1 containing the merged array
         test_dataset with PVTRESD1 containing the merged array
@@ -47,18 +47,19 @@ def merge_pvtresd1_pvtresd2(train_dataset, test_dataset):
             np.isnan(pvtresd1_array), pvtresd2_array, pvtresd1_array
         )
         dataset["PVTRESD1"] = pvtresd1_array
-    
+
     return train_dataset, test_dataset
+
 
 def merge_numadult_hhadult(train_dataset, test_dataset):
     """
     Merge the HHADULT and NUMADULT features, since they represent
     the same feature for the cellphone and landline interviews
-    
+
     Args:
         train_dataset: Dictionary containing training data features.
         test_dataset: Dictionary containing test data features.
-    
+
     Returns:
         train_dataset with HHADULT containing the merged array
         test_dataset with HHADULT containing the merged array
@@ -75,18 +76,19 @@ def merge_numadult_hhadult(train_dataset, test_dataset):
             np.isnan(hh_adult_array), num_adult_array, hh_adult_array
         )
         dataset["HHADULT"] = hh_adult_array
-    
+
     return train_dataset, test_dataset
+
 
 def merge_landline_cellphone_features(train_dataset, test_dataset):
     """
     Merge features that represent the same information for the cellphone
     and landline interviews separately.
-    
+
     Args:
         train_dataset: Dictionary containing training data features.
         test_dataset: Dictionary containing test data features.
-    
+
     Returns:
         train_dataset with merged features
         test_dataset with merged features
@@ -95,7 +97,7 @@ def merge_landline_cellphone_features(train_dataset, test_dataset):
     train_dataset, test_dataset = merge_cstate_stateres(train_dataset, test_dataset)
     train_dataset, test_dataset = merge_pvtresd1_pvtresd2(train_dataset, test_dataset)
     train_dataset, test_dataset = merge_numadult_hhadult(train_dataset, test_dataset)
-    
+
     return train_dataset, test_dataset
 
 
@@ -126,23 +128,26 @@ def drop_useless_features(
     return train_dataset, test_dataset
 
 
-def replace_values_with_dict(x: np.ndarray, replace_dict: dict[float, float]) -> np.ndarray:
+def replace_values_with_dict(
+    x: np.ndarray, replace_dict: dict[float, float]
+) -> np.ndarray:
     """Replaces specified values in an array based on a dictionary mapping.
 
     Iterates through a dictionary of values and their replacements, and replaces each
     occurrence of a specified value in the array with its corresponding replacement.
-    
+
     Args:
         x: Input array in which values will be replaced.
-        replace_dict: Dictionary where each key is a value to be replaced 
+        replace_dict: Dictionary where each key is a value to be replaced
         and each value is the replacement.
-                                           
+
     Returns:
         np.ndarray: Array with values replaced according to the dictionary.
     """
     for value, replacement in replace_dict.items():
         x = np.where(x == value, replacement, x)
     return x
+
 
 def replace_weird_values(
     train_dataset: dict[str, np.ndarray],
@@ -159,7 +164,7 @@ def replace_weird_values(
         {feature_name: {abnormal_value: replacement_value}}
         where each `abnormal_value` in a feature column is replaced by `replacement_value`.
         This dict is defined in config.ABNORMAL_FEATURE_VALUES
-        
+
     Returns:
         train_dataset: Training dataset with abnormal values replaced.
         test_dataset: Testing dataset with abnormal values replaced.
@@ -188,24 +193,26 @@ def replace_weird_values(
 
     return train_dataset, test_dataset
 
+
 def mode(feature_col: np.ndarray) -> float:
     """Calculates the mode of a given feature column.
 
     Identifies the most frequently occurring value in a column of features.
     Useful for filling missing values in categorical or binary features.
-    
+
     Args:
         feature_col (array-like): Array of feature values, can contain NaN values.
 
     Returns:
         Most frequently occurring value (mode) in the input array.
     """
-    unique_values, counts = np.unique(
-        feature_col, return_counts=True, equal_nan=False
-    )
+    unique_values, counts = np.unique(feature_col, return_counts=True, equal_nan=False)
     return unique_values[np.argmax(counts)]
 
-def fill_nans_mode(feature_col: np.ndarray, feature_col_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+
+def fill_nans_mode(
+    feature_col: np.ndarray, feature_col_test: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """Fills NaN values in the training and testing arrays using the mode of the training data.
 
     Useful for categorical and binary features where missing values are replaced
@@ -221,12 +228,13 @@ def fill_nans_mode(feature_col: np.ndarray, feature_col_test: np.ndarray) -> tup
     """
     feature_mode = mode(feature_col)
     filled_x_tr = np.where(np.isnan(feature_col), feature_mode, feature_col)
-    filled_x_te = np.where(
-        np.isnan(feature_col_test), feature_mode, feature_col_test
-    )
+    filled_x_te = np.where(np.isnan(feature_col_test), feature_mode, feature_col_test)
     return filled_x_tr, filled_x_te
 
-def fill_nans_mean(feature_col: np.ndarray, feature_col_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+
+def fill_nans_mean(
+    feature_col: np.ndarray, feature_col_test: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """Fills NaN values in the training and testing arrays using the mean of the training data.
 
     Useful for continuous numerical features, where missing values are replaced by
@@ -242,12 +250,13 @@ def fill_nans_mean(feature_col: np.ndarray, feature_col_test: np.ndarray) -> tup
     """
     feature_mean = np.nanmean(feature_col)
     filled_x_tr = np.where(np.isnan(feature_col), feature_mean, feature_col)
-    filled_x_te = np.where(
-        np.isnan(feature_col_test), feature_mean, feature_col_test
-    )
+    filled_x_te = np.where(np.isnan(feature_col_test), feature_mean, feature_col_test)
     return filled_x_tr, filled_x_te
 
-def fill_nans_discrete_mean(feature_col: np.ndarray, feature_col_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+
+def fill_nans_discrete_mean(
+    feature_col: np.ndarray, feature_col_test: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """Fills NaN values in the training and testing arrays using the rounded mean of the training data.
 
     Useful for ordinal or discrete numerical features, where missing values are replaced
@@ -263,10 +272,9 @@ def fill_nans_discrete_mean(feature_col: np.ndarray, feature_col_test: np.ndarra
     """
     feature_mean = np.round(np.nanmean(feature_col))
     filled_x_tr = np.where(np.isnan(feature_col), feature_mean, feature_col)
-    filled_x_te = np.where(
-        np.isnan(feature_col_test), feature_mean, feature_col_test
-    )
+    filled_x_te = np.where(np.isnan(feature_col_test), feature_mean, feature_col_test)
     return filled_x_tr, filled_x_te
+
 
 def fill_nans(
     train_dataset: dict[str, np.ndarray],

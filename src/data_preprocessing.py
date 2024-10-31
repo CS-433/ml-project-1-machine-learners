@@ -88,7 +88,6 @@ def preprocess_data(
     x_test: numpy array of shape (N,d), d is the number of selected features.
     y_train: numpy array of shape (N, 1), containing the labels in the [0, 1] range.
     """
-
     # Load the original datasets in .npy format (much faster)
     x_train, x_test, y_train = load_original_dataset(data_dir)
 
@@ -97,7 +96,9 @@ def preprocess_data(
     train_dataset = convert_array_to_dict(x_train, config.FEATURE_NAMES)
     test_dataset = convert_array_to_dict(x_test, config.FEATURE_NAMES)
 
-    train_dataset, test_dataset = data_cleaning.merge_landline_cellphone_features(train_dataset, test_dataset)
+    train_dataset, test_dataset = data_cleaning.merge_landline_cellphone_features(
+        train_dataset, test_dataset
+    )
     train_dataset, test_dataset = data_cleaning.drop_useless_features(
         train_dataset, test_dataset, features_to_drop=config.FEATURES_TO_DROP
     )
@@ -108,23 +109,40 @@ def preprocess_data(
     train_dataset, test_dataset = data_cleaning.fill_nans(
         train_dataset, test_dataset, feat_types
     )
-    # train_dataset, test_dataset, feature_names, feat_indexes = one_hot_categoricals(train_dataset, test_dataset, feature_names, feat_indexes, feat_types) # why commented
-    
-    # Convert the datasets back to a numpy array so we can apply operations over all columns in parallel
+
+    categorical_features = [
+        feature
+        for feature, type in feature_type_detection.FEATURE_TYPES.items()
+        if type == feature_type_detection.FeatureType.CATEGORICAL
+    ]
+    train_dataset, test_dataset, x_train_cat, x_test_cat = (
+        feature_engineering.separate_categorical_features(
+            train_dataset, test_dataset, categorical_features
+        )
+    )
+
+    # Convert dataset dict back to numpy ndarray
     x_train = convert_dict_to_array(train_dataset)
     x_test = convert_dict_to_array(test_dataset)
-
-    # Delete the auxiliary structures so we free memory
     del train_dataset, test_dataset
 
-    # Standardize features so we are dealing with variables in the same scale
-    x_train, x_test = feature_engineering.standardize(x_train, x_test)
-
-    # Analyze correlations between features in order to remove redundant data and help with explainability
+    # Analyze correlations between non-cat features in order to remove redundant data and help with explainability
     x_train, x_test = feature_engineering.select_features(x_train, y_train, x_test)
+
+    # Binary encode categorical features
+    x_train_cat, x_test_cat = feature_engineering.binary_encode_multiple_features(
+        x_train_cat, x_test_cat
+    )
+
+    # Standardize non categorical features
+    x_train, x_test = feature_engineering.standardize(x_train, x_test)
 
     # Add bias feature to the dataset so our log regression model is complete
     x_train, x_test = feature_engineering.add_bias_feature(x_train, x_test)
+
+    # Add categorical and non-cat features back
+    x_train = np.hstack((x_train, x_train_cat))
+    x_test = np.hstack((x_test, x_test_cat))
 
     # Convert the targets into 1 or 0 so we can apply the lab loss function
     y_train = (y_train + 1) / 2

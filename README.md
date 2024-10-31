@@ -57,13 +57,11 @@ git clone https://github.com/CS-433/ml-project-1-machine-learners/blob/final_bra
 
 ```
 
-Then, you will need to install the required packages. You can do this by running the following command in the terminal:
+The code required to have these packages installed :
 
-```bash
-
-pip install -r requirements.txt
-
-```
+- numpy
+- json
+- matplotlib
 
 ## Running the model
 

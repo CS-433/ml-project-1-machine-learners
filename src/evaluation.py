@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def compute_accuracy(y_true, y_pred):
+def compute_accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """
     Computes the accuracy of predictions.
 
@@ -16,7 +16,7 @@ def compute_accuracy(y_true, y_pred):
     return np.sum(y_true == y_pred) / y_true.shape[0]
 
 
-def compute_f1_score(y_true, y_pred):
+def compute_f1_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """
     Computes the F1 score for binary classification.
 
@@ -48,7 +48,7 @@ def compute_f1_score(y_true, y_pred):
     return f1
 
 
-def confusion_matrix(y_true, y_pred):
+def compute_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     """
     Constructs the confusion matrix for binary classification.
 
@@ -72,12 +72,10 @@ def confusion_matrix(y_true, y_pred):
     FN = np.sum((y_true == 1) & (y_pred == 0))
 
     # Create the confusion matrix
-    confusion_matrix = np.array([[TN, FP], [FN, TP]])
-
-    return confusion_matrix
+    return np.array([[TN, FP], [FN, TP]])
 
 
-def evaluate_predictions(y_true, y_pred):
+def evaluate_predictions(y_true: np.ndarray, y_pred: np.ndarray) -> None:
     """
     Evaluates and prints key metrics for binary classification.
 
@@ -90,7 +88,7 @@ def evaluate_predictions(y_true, y_pred):
     - F1 Score: The F1 score of predictions.
     - Confusion Matrix: A 2x2 confusion matrix of the predictions.
     """
-    conf_matrix = confusion_matrix(y_true, y_pred)
+    conf_matrix = compute_confusion_matrix(y_true, y_pred)
 
     print(f"Accuracy: {compute_accuracy(y_true, y_pred)}")
     print(f"F1 score: {compute_f1_score(y_true, y_pred)}")

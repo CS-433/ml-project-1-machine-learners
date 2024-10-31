@@ -88,7 +88,7 @@ def train(
         threshold (Optional): scalar that contains the minimum improvement that there should be between iterations.
         If this is not satisfied, we perform early stopping in order to prevent overfitting.
         verbose (Optional): boolean that indicates whether to print information about the training loop
-        
+
     Returns:
         w: numpy array with shape (D,) that contains the trained weights for every
         feature in the dataset

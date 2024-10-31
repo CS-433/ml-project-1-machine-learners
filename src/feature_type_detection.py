@@ -8,11 +8,13 @@ class FeatureType(Enum):
     Enum that represents the possible types of a feature.
     The type of a feature will determine how this is treated in the next steps of the pipeline.
     """
+
     BINARY = 1
     CATEGORICAL = 2
     CONTINUOUS = 3
     NUMERICAL_DISCRETE = 4
     CATEGORICAL_ORDINAL = 5
+
 
 """
 Auxiliary data structure computed manually to distinguish between categorical,
@@ -202,11 +204,11 @@ FEATURE_TYPES = {
 def detect_binary_features(train_dataset: dict[str, np.ndarray]) -> list[str]:
     """
     This method detects which features are binary in the dataset.
-    
+
     After having performed data cleaning, binary features just
     contain two values + Nan, so we remove Nans from the unique values
     and check if the unique_count is 2.
-    
+
     Args:
         train_dataset: Dictionary containing a feature name as key and
         the feature's numpy array as value for every feature
@@ -230,13 +232,15 @@ def detect_binary_features(train_dataset: dict[str, np.ndarray]) -> list[str]:
     return binary_features
 
 
-def detect_numerical_continuous_features(train_dataset: dict[str, np.ndarray]) -> list[str]:
+def detect_numerical_continuous_features(
+    train_dataset: dict[str, np.ndarray]
+) -> list[str]:
     """
     This method detects which features are continuous in the dataset.
-    
+
     In order to do this, we just check if any element has a fractional
     part (in other words, it is non-integer) in the array.
-    
+
     Args:
         train_dataset: Dictionary containing a feature name as key and
         the feature's numpy array as value for every feature
@@ -264,13 +268,15 @@ def detect_numerical_continuous_features(train_dataset: dict[str, np.ndarray]) -
     return cont_features
 
 
-def detect_feature_types(train_dataset: dict[str, np.ndarray]) -> dict[str, FeatureType]:
+def detect_feature_types(
+    train_dataset: dict[str, np.ndarray]
+) -> dict[str, FeatureType]:
     """
     This method performs the complete feature type detection process.
-    
+
     If features are not binary nor continuous, the FEATURE_TYPES data
     structure is used to assess the feature type.
-    
+
     Args:
         train_dataset: Dictionary containing a feature name as key and
         the feature's numpy array as value for every feature

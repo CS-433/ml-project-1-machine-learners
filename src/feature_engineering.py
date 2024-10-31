@@ -3,6 +3,7 @@ import numpy as np
 from src import feature_type_detection
 
 
+# TODO
 def one_hot_categoricals(x_train, x_test, feature_names, feat_indexes, feat_types):
     """Computes the one-hot categorical encoding of categorical features in the dataset"""
     print("Pipeline Stage 7 - One Hot Encoding Categoricals...")
@@ -62,7 +63,7 @@ def one_hot_categoricals(x_train, x_test, feature_names, feat_indexes, feat_type
     return x_train, x_test, feature_names, feat_indexes
 
 
-def list_features(x_train, y_train):
+def list_features(x_train: np.ndarray, y_train: np.ndarray) -> list[int]:
     """
     Returns the list of features selected
 
@@ -104,7 +105,9 @@ def list_features(x_train, y_train):
     return list_features
 
 
-def select_features(x_train, y_train, x_test):
+def select_features(
+    x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the selected features for the train and test set
 
@@ -115,7 +118,7 @@ def select_features(x_train, y_train, x_test):
 
     Returns:
 
-    x_train: numpy array of shape (N,d), d is the number of selected features.
+    x_train: numpy array of shape (N,d)
     x_test: numpy array of shape (N,d), d is the number of selected features.
     """
     features = list_features(x_train, y_train)
@@ -124,8 +127,20 @@ def select_features(x_train, y_train, x_test):
     return x_train, x_test
 
 
-def add_bias_feature(x_train, x_test):
-    """Adds a bias feature column to a 2D array"""
+def add_bias_feature(
+    x_train: np.ndarray, x_test: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Adds a bias feature column to the train and test datasets
+
+    Args:
+        x_train: numpy array of shape (N,D), D is the number of features.
+        x_test: numpy array of shape (n,D), n is the number of test samples.
+
+    Returns:
+        x_train: numpy array of shape (N,D+1)
+        x_test: numpy array of shape (N,D+1)
+    """
     print("Pipeline Stage 9 - Adding Bias Feature...")
     bias = np.ones((x_train.shape[0], 1))
     bias_test = np.ones((x_test.shape[0], 1))
@@ -136,9 +151,19 @@ def add_bias_feature(x_train, x_test):
     return x_train, x_test
 
 
-def standardize(x_train, x_test):
+def standardize(
+    x_train: np.ndarray, x_test: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """Performs standardization over a dataset to ensure
     that all features are in the same scale
+
+    Args:
+        x_train: numpy array of shape (N,D), D is the number of features.
+        x_test: numpy array of shape (n,D), n is the number of test samples.
+
+    Returns:
+        x_train: standardized numpy array of shape (N,D)
+        x_test: standardized numpy array of shape (N,D)
     """
     print("Pipeline Stage 8 - Standardizing Data...")
     mean = np.mean(x_train, axis=0)

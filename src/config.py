@@ -2,6 +2,27 @@ import numpy as np
 
 DATA_FOLDER = "data/"
 
+# Unwanted features
+FEATURES_TO_DROP = [
+    "CTELENUM",
+    "CTELNUM1",
+    "LADULT",
+    "CADULT",
+    "COLGHOUS",
+    "CCLGHOUS",
+    "LANDLINE",
+    "IDATE",
+    "FMONTH",
+    "SEQNO",
+    "_PSU",
+    "STATERES",
+    "NUMADULT",
+    "PVTRESD2",
+    "CELLFON3",
+    "CELLFON2",
+    "_STATE",
+]
+
 # Define the array of feature names in order to help manipulate our data
 FEATURE_NAMES = [
     "_STATE",

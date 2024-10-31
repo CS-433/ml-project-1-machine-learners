@@ -5,22 +5,21 @@ import numpy as np
 from src import config, feature_type_detection, data_cleaning, feature_engineering
 
 
-def load_original_dataset(data_dir):
+def load_original_dataset(data_dir: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Loads the original training and testing datasets from specified directory.
 
     Parameters:
-    data_dir (str): Path to the directory containing dataset files. The function
-                    expects the directory to contain:
-                    - 'train_dataset.npy' for training data features.
-                    - 'test_dataset.npy' for testing data features.
-                    - 'train_targets.npy' for training data labels.
+    data_dir: Path to the directory containing dataset files. The function
+              expects the directory to contain:
+                - 'train_dataset.npy' for training data features.
+                - 'test_dataset.npy' for testing data features.
+                - 'train_targets.npy' for training data labels.
 
     Returns:
-    tuple: A tuple containing:
-           - x_train (np.ndarray): Array of training data features.
-           - x_test (np.ndarray): Array of testing data features.
-           - y_train (np.ndarray): Array of training data labels.
+        x_train: Array of training data features.
+        x_test: Array of testing data features.
+        y_train: Array of training data labels.
     """
     print("Pipeline Stage 1 - Loading Datasets...")
     x_train = np.load(f"{data_dir}/train_dataset.npy")
@@ -29,27 +28,57 @@ def load_original_dataset(data_dir):
     return x_train, x_test, y_train
 
 
-def convert_array_to_dict(x, feature_names):
+# TODO: better name
+def convert_array_to_dict(
+    x: np.ndarray, feature_names: list[str]
+) -> dict[str, np.ndarray]:
     """Converts a 2D numpy array into a dict of 1D numpy arrays.
 
     Args:
+        x: numpy array of shape (N, D) containing the dataset
+        feature_names: list that contains the name of every feature
+        in the dataset, the index of each feature in the list
+        corresponds to the same index in x.
 
     Returns
+        x_dataset: Returns a dictionary containing feature names as
+        keys and their respective array of values as values
 
+        The dict is in the following form:
+        {
+            "feature_names[0]: x[:, 0],
+            ...
+        }
     """
     return {feature: x[:, ind] for ind, feature in enumerate(feature_names)}
 
 
-def convert_dict_to_array(dict_dataset):
+def convert_dict_to_array(dict_dataset: dict[str, np.ndarray]) -> np.ndarray:
     """Converts a dict of 1D numpy arrays into a 2D array
-    Args:
+
+    This method reverses the conversion from 'convert_array_to_dict'
+    after having done the necessary transformations
+
+    Args
+        x_dataset: A dictionary containing feature names as
+        keys and their respective array of values as values
+
+        The dict is in the following form:
+        {
+            "feature_names[0]: x[:, 0],
+            ...
+        }
 
     Returns:
+        x: numpy array of shape (N, D) containing the concatenation
+        of all the arrays inside the dictionary.
     """
     return np.stack(list(dict_dataset.values()), axis=1)
 
 
-def preprocess_data(data_dir: str):
+def preprocess_data(
+    data_dir: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """This function acts as a pipeline that performs data cleaning, feature selection and standardization,
     among other transformations.
 
@@ -70,7 +99,7 @@ def preprocess_data(data_dir: str):
 
     # x_train, x_test = merge_landline_cellphone_features(x_train, x_test, feat_indexes) # TODO
     train_dataset, test_dataset = data_cleaning.drop_useless_features(
-        train_dataset, test_dataset
+        train_dataset, test_dataset, features_to_drop=config.FEATURES_TO_DROP
     )
     train_dataset, test_dataset = data_cleaning.replace_weird_values(
         train_dataset, test_dataset, config.ABNORMAL_FEATURE_VALUES
@@ -80,7 +109,7 @@ def preprocess_data(data_dir: str):
         train_dataset, test_dataset, feat_types
     )
     # train_dataset, test_dataset, feature_names, feat_indexes = one_hot_categoricals(train_dataset, test_dataset, feature_names, feat_indexes, feat_types) # why commented
-
+    
     # Convert the datasets back to a numpy array so we can apply operations over all columns in parallel
     x_train = convert_dict_to_array(train_dataset)
     x_test = convert_dict_to_array(test_dataset)

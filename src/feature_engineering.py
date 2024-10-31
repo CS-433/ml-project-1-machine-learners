@@ -36,7 +36,9 @@ def separate_categorical_features(
     return train_dataset, test_dataset, x_train_cat, x_test_cat
 
 
-def binary_encode_column(column: np.ndarray, unique_train_values: list[float]) -> np.ndarray:
+def binary_encode_column(
+    column: np.ndarray, unique_train_values: list[float]
+) -> np.ndarray:
     """
     Encode a column with binary encoding using the unique values from the training set.
 
@@ -68,7 +70,9 @@ def binary_encode_column(column: np.ndarray, unique_train_values: list[float]) -
     return binary_encoded
 
 
-def binary_encode_multiple_features(x_train: np.ndarray, x_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def binary_encode_multiple_features(
+    x_train: np.ndarray, x_test: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform binary encoding over multiple categorical columns, using training data for reference.
 
@@ -80,6 +84,7 @@ def binary_encode_multiple_features(x_train: np.ndarray, x_test: np.ndarray) -> 
         binary_encoded_train: The binary encoded version of the training input.
         binary_encoded_test: The binary encoded version of the test input.
     """
+    print("Pipeline Stage 7 - Binary Encoding Categorical Features...")
     binary_encoded_train = []
     binary_encoded_test = []
 
@@ -206,7 +211,7 @@ def standardize(
         x_train: standardized numpy array of shape (N,D)
         x_test: standardized numpy array of shape (N,D)
     """
-    print("Pipeline Stage 8 - Standardizing Data...")
+    print("Pipeline Stage 8 - Standardizing Numerical Features...")
     mean = np.mean(x_train, axis=0)
     std = np.std(x_train, axis=0)
 

@@ -28,7 +28,7 @@ def set_execution_arguments() -> argparse.Namespace:
         help="Seed to ensure that results are deterministic.",
     )
     parser.add_argument(
-        "--gamma", type=float, default=0.1, help="Learning rate for model training."
+        "--gamma", type=float, default=0.2, help="Learning rate for model training."
     )
     parser.add_argument(
         "--max_iters",
@@ -37,9 +37,9 @@ def set_execution_arguments() -> argparse.Namespace:
         help="Maximum number of iterations for training.",
     )
     parser.add_argument(
-        "--lambda_", type=float, default=0, help="Regularization parameter."
+        "--lambda_", type=float, default=0.01, help="Regularization parameter."
     )
-    parser.add_argument("--undersampling_ratio", type=float, default=0.2, help=".")
+    parser.add_argument("--undersampling_ratio", type=float, default=0.25, help=".")
     return parser.parse_args()
 
 
@@ -68,8 +68,8 @@ if __name__ == "__main__":
     w, loss = model.train(
         x_tr,
         y_tr,
-        x_val,
-        y_val,
+        x_val=x_val,
+        y_val=y_val,
         gamma=args.gamma,
         max_iters=args.max_iters,
         lambda_=args.lambda_,

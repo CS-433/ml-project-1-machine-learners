@@ -65,12 +65,12 @@ def undersample(
 def train(
     x_tr: np.ndarray,
     y_tr: np.ndarray,
-    x_val: np.ndarray,
-    y_val: np.ndarray,
     gamma: float,
     max_iters: int,
     lambda_: float,
     threshold: float = 1e-6,
+    x_val: np.ndarray = None,
+    y_val: np.ndarray = None,
     verbose: bool = True,
 ) -> tuple[np.ndarray, float]:
     """
@@ -94,22 +94,30 @@ def train(
         feature in the dataset
         loss: scalar containing the negative log likelihood loss over the training set
     """
+
+    validation_set = False
+    val_loss = None
+    if x_val is not None:
+        validation_set = True
+
     w = np.zeros(x_tr.shape[1])
     previous_loss = 100000
     for i in range(max_iters):
         loss, w = implementations.learning_by_gradient_descent(
             y_tr, x_tr, w, gamma=gamma, lambda_=lambda_
         )
-        val_loss = implementations.calculate_loss(y_val, x_val, w)
+        if validation_set:
+            val_loss = implementations.calculate_loss(y_val, x_val, w)
 
         if verbose and i % 20 == 0:
             print(f"Iteration {i} - Train Loss: {loss} - Valid Loss: {val_loss}")
 
-        if i >= 100 and previous_loss - val_loss < threshold:
+        loss_to_check = val_loss if validation_set else loss
+        if i >= 100 and previous_loss - loss_to_check < threshold:
             print(f"Converged in {i} iterations")
             break
 
-        previous_loss = val_loss
+        previous_loss = loss_to_check
     return w, loss
 
 
@@ -131,8 +139,7 @@ def predict_labels(w: np.ndarray, x: np.ndarray) -> np.ndarray:
     return y_pred
 
 
-# TODO: do we keep this?
-def build_k_indices(y, k_fold, seed):
+def build_k_indices(y, k_fold):
     """
     Build k indices for k-fold.
 
@@ -147,7 +154,6 @@ def build_k_indices(y, k_fold, seed):
     """
     num_row = y.shape[0]
     interval = int(num_row / k_fold)
-    np.random.seed(seed)
     indices = np.random.permutation(num_row)
     k_indices = [indices[k * interval : (k + 1) * interval] for k in range(k_fold)]
     return np.array(k_indices)
@@ -161,7 +167,6 @@ def cross_validation_k(
     lambda_=0.001,
     lr=0.1,
     n_epochs=1000,
-    sampling_method="oversampling",
     prop=0.5,
 ):
     """
@@ -189,7 +194,18 @@ def cross_validation_k(
     x_test = x[k_indices[k]]
     y_test = y[k_indices[k]]
 
-    w, loss = train(x_train, y_train, lr, n_epochs, lambda_)
+    x_train_undersampled, y_train_undersampled = undersample(
+        x_train, y_train, undersampling_ratio=prop
+    )
+
+    w, loss = train(
+        x_train_undersampled,
+        y_train_undersampled,
+        gamma=lr,
+        max_iters=n_epochs,
+        lambda_=lambda_,
+        verbose=False,
+    )
     y_pred = predict_labels(w, x_test)
     f1 = evaluation.compute_f1_score(y_pred, y_test)
     return f1
@@ -199,11 +215,9 @@ def cross_validation(
     y,
     x,
     k_fold,
-    seed=1,
     lambda_=0.001,
     lr=0.1,
     n_epochs=1000,
-    sampling_method="oversampling",
     prop=0.5,
 ):
     """
@@ -224,10 +238,8 @@ def cross_validation(
     Returns:
         Mean F-1 score ove the k folds
     """
-    k_indices = build_k_indices(y, k_fold, seed)
+    k_indices = build_k_indices(y, k_fold)
     f1 = 0
     for k in range(k_fold):
-        f1 += cross_validation_k(
-            y, x, k_indices, k, lambda_, lr, n_epochs, sampling_method, prop
-        )
+        f1 += cross_validation_k(y, x, k_indices, k, lambda_, lr, n_epochs, prop)
     return float(f1 / k_fold)

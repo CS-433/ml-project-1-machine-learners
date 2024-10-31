@@ -28,7 +28,6 @@ def load_original_dataset(data_dir: str) -> tuple[np.ndarray, np.ndarray, np.nda
     return x_train, x_test, y_train
 
 
-# TODO: better name
 def convert_array_to_dict(
     x: np.ndarray, feature_names: list[str]
 ) -> dict[str, np.ndarray]:

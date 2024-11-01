@@ -2,12 +2,8 @@ import json
 
 import numpy as np
 
-from src import (
-    config, 
-    feature_type_detection, 
-    data_cleaning, 
-    feature_engineering
-)
+from src import config, feature_type_detection, data_cleaning, feature_engineering
+
 
 def load_original_dataset(data_dir: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """

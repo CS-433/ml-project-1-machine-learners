@@ -62,8 +62,8 @@ if __name__ == "__main__":
         print("Failed - Reading original datasets...")
         # If they do not exist, load the original datasets
         # Load and preprocess the data, ready for modelling
-        x_train, x_test, y_train, train_ids, test_ids = data_preprocessing.preprocess_data(
-            data_dir=config.DATA_FOLDER
+        x_train, x_test, y_train, train_ids, test_ids = (
+            data_preprocessing.preprocess_data(data_dir=config.DATA_FOLDER)
         )
 
     # Since the healthy class is overrepresented, undersampling is a good idea

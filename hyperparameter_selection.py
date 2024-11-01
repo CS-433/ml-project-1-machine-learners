@@ -5,7 +5,9 @@ import numpy as np
 from src import model
 
 
-def compute_best_hyperparams(x_train: np.ndarray, y_train: np.ndarray, hyperparams_grid: list) -> None:
+def compute_best_hyperparams(
+    x_train: np.ndarray, y_train: np.ndarray, hyperparams_grid: list
+) -> None:
     """
     Test the oversampling and undersampling methods
     """

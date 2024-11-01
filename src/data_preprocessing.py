@@ -16,9 +16,9 @@ def load_original_dataset(data_dir: str) -> tuple[np.ndarray, np.ndarray, np.nda
     Parameters:
     data_dir: Path to the directory containing dataset files. The function
               expects the directory to contain:
-                - 'train_dataset.npy' for training data features.
-                - 'test_dataset.npy' for testing data features.
-                - 'train_targets.npy' for training data labels.
+                - 'train_dataset.npz' for training data features.
+                - 'test_dataset.npz' for testing data features.
+                - 'train_targets.npz' for training data labels.
 
     Returns:
         x_train: Array of training data features.
@@ -26,9 +26,9 @@ def load_original_dataset(data_dir: str) -> tuple[np.ndarray, np.ndarray, np.nda
         y_train: Array of training data labels.
     """
     print("Pipeline Stage 1 - Loading Datasets...")
-    x_train = np.load(f"{data_dir}/train_dataset.npy")
-    x_test = np.load(f"{data_dir}/test_dataset.npy")
-    y_train = np.load(f"{data_dir}/train_targets.npy")
+    x_train = np.load(f"{data_dir}/train_dataset.npz")["arr_0"]
+    x_test = np.load(f"{data_dir}/test_dataset.npz")["arr_0"]
+    y_train = np.load(f"{data_dir}/train_targets.npz")["arr_0"]
     return x_train, x_test, y_train
 
 

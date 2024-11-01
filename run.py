@@ -52,9 +52,9 @@ if __name__ == "__main__":
     try:
         # Try to load already processed datasets
         print("Attempting to read already processed datasets...")
-        x_train = np.load(f"{config.DATA_FOLDER}/processed_x_train.npy")
-        x_test = np.load(f"{config.DATA_FOLDER}/processed_x_test.npy")
-        y_train = np.load(f"{config.DATA_FOLDER}/processed_y_train.npy")
+        x_train = np.load(f"{config.DATA_FOLDER}/aprocessed_x_train.npz")["arr_0"]
+        x_test = np.load(f"{config.DATA_FOLDER}/processed_x_test.npz")["arr_0"]
+        y_train = np.load(f"{config.DATA_FOLDER}/processed_y_train.npz")["arr_0"]
         train_ids = np.arange(x_train.shape[0])
         test_ids = np.arange(x_test.shape[0]) + x_train.shape[0]
     except FileNotFoundError:

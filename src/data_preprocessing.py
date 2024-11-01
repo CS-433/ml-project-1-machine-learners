@@ -127,6 +127,8 @@ def preprocess_data(
     # Convert dataset dict back to numpy ndarray
     x_train = convert_dict_to_array(train_dataset)
     x_test = convert_dict_to_array(test_dataset)
+
+    # Remove variables to free memory
     del train_dataset, test_dataset
 
     # Analyze correlations between non-cat features in order to remove

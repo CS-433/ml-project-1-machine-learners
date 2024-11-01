@@ -3,7 +3,7 @@ Team  : machine-learners
 
 Team members:
 - Madeleine HUEBER
-- Adrian MARTINEZ
+- Adrian MARTINEZ LOPEZ
 - Duru BEKTAS
 
 
@@ -16,22 +16,24 @@ More details about the project can be found in the project paper `project1.pdf`.
 
 ### Repository structure
 
-`data/`: Directory containing datasets and feature information.
+`data/`: Directory containing datasets.
 
-- `abnormal_feature_values.json`: JSON file specifying abnormal feature values to be addressed during data cleaning.
-- `test_dataset.npy`: Test dataset in NumPy format.
-- `train_dataset.npy` : Training dataset in NumPy format.
-- `train_targets.npy` : Labels for the training dataset.
+- `processed_x_test.npz`: Processed test dataset in compressed NumPy format.
+- `processed_x_train.npz`: Processed train dataset in compressed NumPy format.
+- `processed_y_train.npz`: Processed train labels in compressed NumPy format.
+- `test_dataset.npz`: Test dataset in compressed NumPy format.
+- `train_dataset.npz` : Training dataset in compressed NumPy format.
+- `train_targets.npz` : Labels for the training dataset in compressed NumPy format.
 
 `src/` : Main directory for source code modules.
 
-- `config.py` : Configuration file containing paths and general settings for the project.
+- `config.py`: Configuration file containing paths, settings, and helper data structures for the project.
 - `data_cleaning.py`: Module for cleaning data and handling outliers or missing values.
-- `data_preprocessing.py` : Functions for preprocessing data before training, such as normalization or encoding.
-- `evaluation.py` : Module to evaluate model predictions using various metrics.
+- `data_preprocessing.py`: Functions for preprocessing data before training, such as normalization or encoding.
+- `evaluation.py`: Module to evaluate model predictions using various metrics.
 - `feature_engineering.py`: Contains functions to create and transform features.
 - `feature_type_detection.py`: Detects data types of features and helps with automated preprocessing.
-- `helpers.py` : Utility functions for tasks like saving files, managing logs, etc.
+- `helpers.py`: Utility functions for tasks like saving files, managing logs, etc.
 - `model.py`: Contains functions for training, validating, and predicting with the model.
 
 Project Root:
@@ -40,10 +42,10 @@ Project Root:
 - `README.md`: Project documentation with instructions on setup, usage, and structure.
 - `implementations.py` : Functions from the part 1 of the project
 - `run.py`: Main script to execute the full pipeline, from data loading and preprocessing to model training and evaluation.
-
-
-
-
+            If the processed dataset is already in the `data` folder, the preprocessing step will be skipped.
+            Othwerwise, the original dataset will be loaded and preprocessed.
+            Both datasets are present in the `data` folder.
+- `hyperparameter_selection.py`: Script to perform hyperparameter selection with 5-fold cross-validation.
 
 
 ### Installation 
@@ -53,7 +55,7 @@ To use our model on this project, you will first need to clone the repository
 
 ```bash
 
-git clone https://github.com/CS-433/ml-project-1-machine-learners/blob/final_branch/run.py
+git clone https://github.com/CS-433/ml-project-1-machine-learners/
 
 ```
 
@@ -73,7 +75,7 @@ python run.py --seed 42 --gamma 0.1 --max_iters 1000 --lambda_ 0 --undersampling
 
 ```
 
-It will preprocess the data, train the model and output the predictions in the form of a csv file. The predictions will be saved as `submission.csv`.
+It will preprocess the data, train the model and output the predictions in the form of a csv file. The predictions will be saved as `submission.csv` in the root folder.
 
 ### Arguments
 
@@ -93,7 +95,7 @@ To do some parameters exploration, you can run the following command in the term
 
 ```bash
 
-python test.py
+python hyperparameter_selection.py
 
 ```
 

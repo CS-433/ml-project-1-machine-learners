@@ -12,7 +12,7 @@ Team members:
 This project is part of the course CS-433 Machine Learning at EPFL. The goal of the project is to predict if someone will have a cardiovascular disease based on a set of answers to a medical questionnaire. The dataset used comes from the Behavioral Risk Factor Surveillance System (BRFSS) and contains  for each person the answers to 330 questions. The target variable is binary and indicates if the person has a cardiovascular disease or not. 
 For this project we first did some data preprocessing to clean the data and handle missing values. Then we did some feature selection to reduce the number of features. Finally, we trained a logistic regression model to predict the target variable.
 
-More details about the project can be found in the project paper `project1.pdf`.
+More details about the project can be found in the project paper `project1_report.pdf`.
 
 ### Repository structure
 
@@ -56,6 +56,7 @@ Project Root:
             Othwerwise, the original dataset will be loaded and preprocessed.
             Both datasets are present in the `data` folder.
 - `hyperparameter_selection.py`: Script to perform hyperparameter selection with 5-fold cross-validation.
+- `project1_report.pdf` : The project paper explaining our process
 
 
 ### Installation 

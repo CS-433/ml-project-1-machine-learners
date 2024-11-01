@@ -2,8 +2,12 @@ import json
 
 import numpy as np
 
-from src import config, feature_type_detection, data_cleaning, feature_engineering
-
+from src import (
+    config, 
+    feature_type_detection, 
+    data_cleaning, 
+    feature_engineering
+)
 
 def load_original_dataset(data_dir: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -78,8 +82,8 @@ def convert_dict_to_array(dict_dataset: dict[str, np.ndarray]) -> np.ndarray:
 def preprocess_data(
     data_dir: str,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """This function acts as a pipeline that performs data cleaning, feature selection and standardization,
-    among other transformations.
+    """This function acts as a pipeline that performs data cleaning,
+    feature selection and standardization, among other transformations.
 
     The resulting dataset is ready for modelling.
     Returns:
@@ -125,7 +129,8 @@ def preprocess_data(
     x_test = convert_dict_to_array(test_dataset)
     del train_dataset, test_dataset
 
-    # Analyze correlations between non-cat features in order to remove redundant data and help with explainability
+    # Analyze correlations between non-cat features in order to remove
+    # redundant data and help with explainability
     x_train, x_test = feature_engineering.select_features(x_train, y_train, x_test)
 
     # Binary encode categorical features

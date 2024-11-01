@@ -2,7 +2,6 @@ import argparse
 
 import numpy as np
 
-import implementations as implementations
 from src import config, evaluation, helpers, data_preprocessing, model
 
 
@@ -50,10 +49,21 @@ if __name__ == "__main__":
     # Set random seed to ensure that results are deterministic
     np.random.seed(args.seed)
 
-    # Load and preprocess the data, ready for modelling
-    x_train, x_test, y_train, train_ids, test_ids = data_preprocessing.preprocess_data(
-        data_dir=config.DATA_FOLDER
-    )
+    try:
+        # Try to load already processed datasets
+        print("Attempting to read already processed datasets...")
+        x_train = np.load(f"{config.DATA_FOLDER}/processed_x_train.npy")
+        x_test = np.load(f"{config.DATA_FOLDER}/processed_x_test.npy")
+        y_train = np.load(f"{config.DATA_FOLDER}/processed_y_train.npy")
+        train_ids = np.arange(x_train.shape[0])
+        test_ids = np.arange(x_test.shape[0]) + x_train.shape[0]
+    except FileNotFoundError:
+        print("Failed - Reading original datasets...")
+        # If they do not exist, load the original datasets
+        # Load and preprocess the data, ready for modelling
+        x_train, x_test, y_train, train_ids, test_ids = data_preprocessing.preprocess_data(
+            data_dir=config.DATA_FOLDER
+        )
 
     # Since the healthy class is overrepresented, undersampling is a good idea
     # to improve predictions over the unhealthy class
